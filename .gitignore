@@ -1,0 +1,46 @@
+*.o
+*.elf
+*.so
+*.s
+*.pyc
+*.a
+
+# test files
+*.vbwt
+*.nbwt
+*.psi
+*.map
+
+# inputs
+*commands.txt
+*query
+
+# outputs
+*.csv
+*.log
+
+# edger tool sgx auto-generated files
+*subtol_u.c
+*subtol_u.h
+*subtol_t.c
+*subtol_t.h
+*.config_*
+
+# enclave client + SGX identity
+*.key
+*__pycache__
+
+# generated binaries
+prep
+s3ref
+*circuit_test
+*path_test
+*recursion_test
+*linear_test
+*ring_*test
+*csize_bench
+*ring_bench
+*oram_bench
+*libobl.a
+*subtol_srv
+*s3

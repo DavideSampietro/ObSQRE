@@ -1,0 +1,16 @@
+./configure  --enable-cryptonly \
+	--enable-static --enable-harden --disable-crypttests --disable-examples \
+	--enable-singlethreaded --disable-asyncthreads \
+	--enable-pwdbased --enable-aesctr --disable-aescbc \
+	--enable-aesni --enable-intelasm --enable-intelrand \
+	--disable-eccshamir --disable-ecc --disable-supportedcurves --disable-fastmath \
+	--disable-rsa --disable-oaep --disable-dh \
+	--disable-poly1305 --disable-chacha \
+	--disable-oldtls --disable-tlsv12 \
+	--disable-md5 \
+	--disable-examples \
+	--disable-filesystem --disable-rng --disable-memory \
+	--disable-hashdrbg --disable-coding \
+	--disable-extended-master \
+	--disable-asn --disable-errorstrings --disable-oldnames --disable-errorqueue \
+	--disable-pkcs12 --disable-asyncthreads

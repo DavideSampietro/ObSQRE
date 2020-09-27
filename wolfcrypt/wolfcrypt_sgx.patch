@@ -1,0 +1,177 @@
+From 1c38ed5634db06873c51afa503e8d9cddce5b2a7 Mon Sep 17 00:00:00 2001
+From: Davide Sampietro <davide@gliese1214b>
+Date: Fri, 18 Sep 2020 19:00:03 +0200
+Subject: [PATCH] Fixed CPUID
+
+SGXv1 does not support CPUID, hence switching to hardcoded flags.
+
+Signed-off-by: Davide Sampietro <davide@gliese1214b>
+---
+ wolfcrypt/src/asm.c   | 53 +++-------------------------------
+ wolfcrypt/src/cpuid.c | 67 +++++++++----------------------------------
+ 2 files changed, 17 insertions(+), 103 deletions(-)
+
+diff --git a/wolfcrypt/src/asm.c b/wolfcrypt/src/asm.c
+index 0af4447c7..94893a00b 100644
+--- a/wolfcrypt/src/asm.c
++++ b/wolfcrypt/src/asm.c
+@@ -40,23 +40,6 @@
+  * supported. Also, let's setup a macro for proper linkage w/o ABI conflicts
+  */
+ 
+-#if defined(HAVE_INTEL_MULX)
+-#ifndef _MSC_VER
+-    #define cpuid(reg, leaf, sub)\
+-            __asm__ __volatile__ ("cpuid":\
+-             "=a" (reg[0]), "=b" (reg[1]), "=c" (reg[2]), "=d" (reg[3]) :\
+-             "a" (leaf), "c"(sub));
+-
+-    #define XASM_LINK(f) asm(f)
+-#else
+-
+-    #include <intrin.h>
+-    #define cpuid(a,b,c) __cpuidex((int*)a,b,c)
+-
+-    #define XASM_LINK(f)
+-
+-#endif /* _MSC_VER */
+-
+ #define EAX 0
+ #define EBX 1
+ #define ECX 2
+@@ -80,40 +63,12 @@
+ static word32 cpuid_check = 0 ;
+ static word32 cpuid_flags = 0 ;
+ 
+-static word32 cpuid_flag(word32 leaf, word32 sub, word32 num, word32 bit) {
+-    int got_intel_cpu = 0;
+-    int got_amd_cpu = 0;
+-    unsigned int reg[5];
+-
+-    reg[4] = '\0' ;
+-    cpuid(reg, 0, 0);
+-
+-    /* check for intel cpu */
+-    if( memcmp((char *)&(reg[EBX]), "Genu", 4) == 0 &&
+-        memcmp((char *)&(reg[EDX]), "ineI", 4) == 0 &&
+-        memcmp((char *)&(reg[ECX]), "ntel", 4) == 0) {
+-        got_intel_cpu = 1;
+-    }
+-
+-    /* check for AMD cpu */
+-    if( memcmp((char *)&(reg[EBX]), "Auth", 4) == 0 &&
+-        memcmp((char *)&(reg[EDX]), "enti", 4) == 0 &&
+-        memcmp((char *)&(reg[ECX]), "cAMD", 4) == 0) {
+-        got_amd_cpu = 1;
+-    }
+-    if (got_intel_cpu || got_amd_cpu) {
+-        cpuid(reg, leaf, sub);
+-        return((reg[num]>>bit)&0x1) ;
+-    }
+-    return 0 ;
+-}
+-
+ WC_INLINE static int set_cpuid_flags(void) {
+     if(cpuid_check == 0) {
+-        if(cpuid_flag(7, 0, EBX, 8)){  cpuid_flags |= CPUID_BMI2 ; }
+-        if(cpuid_flag(7, 0, EBX,19)){  cpuid_flags |= CPUID_ADX  ; }
+-		cpuid_check = 1 ;
+-		return 0 ;
++	cpuid_flags |= CPUID_BMI2;
++	cpuid_flags |= CPUID_ADX;
++	cpuid_check = 1 ;
++	return 0 ;
+     }
+     return 1 ;
+ }
+diff --git a/wolfcrypt/src/cpuid.c b/wolfcrypt/src/cpuid.c
+index 09b265122..27c20d1f1 100644
+--- a/wolfcrypt/src/cpuid.c
++++ b/wolfcrypt/src/cpuid.c
+@@ -34,21 +34,6 @@
+      * supported. Also, let's setup a macro for proper linkage w/o ABI conflicts
+      */
+ 
+-    #ifndef _MSC_VER
+-        #define cpuid(reg, leaf, sub)\
+-            __asm__ __volatile__ ("cpuid":\
+-                "=a" (reg[0]), "=b" (reg[1]), "=c" (reg[2]), "=d" (reg[3]) :\
+-                "a" (leaf), "c"(sub));
+-
+-        #define XASM_LINK(f) asm(f)
+-    #else
+-        #include <intrin.h>
+-
+-        #define cpuid(a,b,c) __cpuidex((int*)a,b,c)
+-
+-        #define XASM_LINK(f)
+-    #endif /* _MSC_VER */
+-
+     #define EAX 0
+     #define EBX 1
+     #define ECX 2
+@@ -57,48 +42,22 @@
+     static word32 cpuid_check = 0;
+     static word32 cpuid_flags = 0;
+ 
+-    static word32 cpuid_flag(word32 leaf, word32 sub, word32 num, word32 bit)
+-    {
+-        int got_intel_cpu = 0;
+-        int got_amd_cpu = 0;
+-        unsigned int reg[5];
+-        reg[4] = '\0';
+-        cpuid(reg, 0, 0);
+-
+-        /* check for Intel cpu */
+-        if (XMEMCMP((char *)&(reg[EBX]), "Genu", 4) == 0 &&
+-            XMEMCMP((char *)&(reg[EDX]), "ineI", 4) == 0 &&
+-            XMEMCMP((char *)&(reg[ECX]), "ntel", 4) == 0) {
+-            got_intel_cpu = 1;
+-        }
+-
+-        /* check for AMD cpu */
+-        if (XMEMCMP((char *)&(reg[EBX]), "Auth", 4) == 0 &&
+-            XMEMCMP((char *)&(reg[EDX]), "enti", 4) == 0 &&
+-            XMEMCMP((char *)&(reg[ECX]), "cAMD", 4) == 0) {
+-            got_amd_cpu = 1;
+-        }
+-
+-        if (got_intel_cpu || got_amd_cpu) {
+-            cpuid(reg, leaf, sub);
+-            return ((reg[num] >> bit) & 0x1);
+-        }
+-        return 0;
+-    }
+-
+-
+     void cpuid_set_flags(void)
+     {
++	// Manually set the flags supported by your CPU here.
++	// To get them, "cat /proc/cpuinfo"
++
+         if (!cpuid_check) {
+-            if (cpuid_flag(1, 0, ECX, 28)) { cpuid_flags |= CPUID_AVX1  ; }
+-            if (cpuid_flag(7, 0, EBX,  5)) { cpuid_flags |= CPUID_AVX2  ; }
+-            if (cpuid_flag(7, 0, EBX,  8)) { cpuid_flags |= CPUID_BMI2  ; }
+-            if (cpuid_flag(1, 0, ECX, 30)) { cpuid_flags |= CPUID_RDRAND; }
+-            if (cpuid_flag(7, 0, EBX, 18)) { cpuid_flags |= CPUID_RDSEED; }
+-            if (cpuid_flag(1, 0, ECX, 25)) { cpuid_flags |= CPUID_AESNI ; }
+-            if (cpuid_flag(7, 0, EBX, 19)) { cpuid_flags |= CPUID_ADX   ; }
+-            if (cpuid_flag(1, 0, ECX, 22)) { cpuid_flags |= CPUID_MOVBE ; }
+-            cpuid_check = 1;
++	    cpuid_flags |= CPUID_AVX1;
++	    cpuid_flags |= CPUID_AVX2;
++	    cpuid_flags |= CPUID_BMI2;
++	    cpuid_flags |= CPUID_RDRAND;
++	    cpuid_flags |= CPUID_RDSEED;
++	    cpuid_flags |= CPUID_AESNI;
++	    cpuid_flags |= CPUID_ADX;
++	    cpuid_flags |= CPUID_MOVBE;
++
++	    cpuid_check = 1;
+         }
+     }
+ 
+-- 
+2.20.1
+

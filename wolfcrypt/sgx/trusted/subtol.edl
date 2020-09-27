@@ -1,0 +1,27 @@
+enclave {
+	// include the base .edl files here
+	from "base/attestation.edl" import *;
+	from "base/host_alloc.edl" import *;
+
+	trusted {
+		include "sgx_error.h"
+		include "sgx_key_exchange.h"
+		
+		public void create_session([out] sgx_status_t *ret, sgx_ra_context_t ctx);
+		public void close_session([out] sgx_status_t *ret, sgx_ra_context_t ctx);
+		// 28 = 7 * sizeof(unsigned int)
+		public void configure([out] sgx_status_t *ret, sgx_ra_context_t ctx, [in, count=28] uint8_t *cfg, [in, count=16] uint8_t *mac);
+		public void loader([out] sgx_status_t *ret, sgx_ra_context_t ctx, [user_check] void *fp, [in, count=64] uint8_t *passphrase, [in, count=12] uint8_t *iv, [in, count=16] uint8_t *mac);
+		
+		public void query([out] sgx_status_t *ret, sgx_ra_context_t ctx, [in, count=len] uint8_t *q, size_t len, [in, out, count=12] uint8_t *iv, [in, out, count=16] uint8_t *mac, [out, count=2] int32_t *res);
+		
+		public void fetch_sa([out] sgx_status_t *ret, sgx_ra_context_t ctx, [out] int32_t **sa, [out] size_t *len, [out, count=12] uint8_t *iv, [out, count=16] uint8_t *mac);
+	};
+
+	untrusted {
+		include "stddef.h"
+
+		void ocall_get_file_size([user_check] void *fb, [out] size_t *size);
+		void ocall_get_blob([user_check] void *fb, [out, count=len] uint8_t *out, size_t len, size_t offset);
+	};
+};

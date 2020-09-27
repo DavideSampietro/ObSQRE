@@ -1,0 +1,13 @@
+enclave {
+	include "sgx_tkey_exchange.h"
+	include "stdint.h"
+	include "sgx_error.h"
+
+	from "sgx_tkey_exchange.edl" import *;
+
+	trusted {
+		public void ecall_get_dhke_parameter([out] sgx_status_t *init_status, [out] sgx_ra_context_t *dhke_context);
+		public void ecall_msg4([out] sgx_status_t *handshake_status, sgx_ra_context_t dhke_context, [in, count=16] uint8_t *mac, [in, count=len] uint8_t *str, size_t len);
+		public void ecall_close_dhke_context([out] sgx_status_t *cl_status, sgx_ra_context_t dhke_context);
+	};
+};

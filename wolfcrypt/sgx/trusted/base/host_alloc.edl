@@ -1,0 +1,12 @@
+enclave {
+	include "stddef.h"
+
+	trusted {
+		void host_alloc([user_check] void **out, size_t s);
+	};
+
+	untrusted {
+		void ocall_host_alloc([out, size=8, count=1] void **out, size_t s);
+		void host_free([user_check] void *in);
+	};
+};
